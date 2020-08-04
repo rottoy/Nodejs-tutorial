@@ -5,8 +5,9 @@ var url = require('url');
 var app = http.createServer(function(request,response){
     var _url = request.url;
     var queryData = url.parse(_url,true).query;
+    var pathname= url.parse(_url,true).pathname;
     var title=queryData.id;
-    console.log(queryData);
+    console.log(url.parse(_url,true));
     if(_url == '/'){
       _url = '/index.html';
     }
@@ -14,8 +15,7 @@ var app = http.createServer(function(request,response){
       return response.writeHead(404);
     }
 
-    //200(OK)를 반환
-    response.writeHead(200);
+   
     fs.readFile(`../data/${queryData.id}`,'utf-8',function(err,description){
         var template=`
             <!doctype html>
@@ -36,6 +36,8 @@ var app = http.createServer(function(request,response){
         </body>
         </html>
             `;
+        //200(OK)를 반환
+        response.writeHead(200);
         response.end(template);
     })
     
