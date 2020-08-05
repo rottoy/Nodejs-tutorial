@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/rottoy/Nodejs-tutorial#readme",
   "dependencies": {
+    "mysql": "^2.18.1",
     "sanitize-html": "^1.27.2"
   }
 }
