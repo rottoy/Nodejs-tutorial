@@ -1,0 +1,22 @@
+{
+  "name": "nodejs-tutorial",
+  "version": "1.0.0",
+  "description": "노드js 환경 구축 및 실습",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rottoy/Nodejs-tutorial.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rottoy/Nodejs-tutorial/issues"
+  },
+  "homepage": "https://github.com/rottoy/Nodejs-tutorial#readme",
+  "dependencies": {
+    "sanitize-html": "^1.27.2"
+  }
+}

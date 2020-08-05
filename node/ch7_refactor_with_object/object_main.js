@@ -3,6 +3,7 @@ var fs = require('fs');
 var url = require('url');
 var qs = require('querystring');
 var path = require('path');
+var sanitizeHtml = require('../../node_modules/sanitize-html'); 
 
 var template ={
     //HTML template 반환
@@ -73,17 +74,18 @@ var app = http.createServer(function(request,response){
                 var filteredId = path.parse(queryData.id).base;
                 fs.readFile(`../data/${filteredId}`,'utf-8',function(err,description){
                     var title=queryData.id;
-                   
+                    var sanitizedTitle = sanitizeHtml(title);
+                    var sanitizedDescription = sanitizeHtml(description);
                     var list =template.list(filelist);
                     console.log(filelist);
                     console.log(list);
                     
-                    var html=template.html(title,list,
-                        `<h2>${title}</h2>${description}`,
+                    var html=template.html(sanitizedTitle,list,
+                        `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
                         `<a href="/create">create</a>
-                        <a href="/update?id=${title}">update</a>
+                        <a href="/update?id=${sanitizedTitle}">update</a>
                         <form action="delete_process" method='POST'>
-                        <input type='hidden' name='id' value="${title}">
+                        <input type='hidden' name='id' value="${sanitizedTitle}">
                         <input type='submit' value='delete'>
                         </form>
                        `);
