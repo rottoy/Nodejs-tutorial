@@ -3,43 +3,17 @@ var fs = require('fs');
 var url = require('url');
 var qs = require('querystring');
 var path = require('path');
-var sanitizeHtml = require('../../node_modules/sanitize-html'); 
+var sanitizeHtml = require('../node_modules/sanitize-html'); 
+var mysql      = require('../node_modules/mysql');
+var template = require('./lib/template.js')
 
-
-var template ={
-    //HTML template 반환
-    html : function (title, list, body, control){
-        return `
-        <!doctype html>
-    <html>
-    <head>
-    <title>WEB1 - ${title}</title>
-    <meta charset="utf-8">
-    </head>
-    <body>
-    <h1><a href="/">WEB</a></h1>
-    ${list}
-    ${control}
-    ${body}
-    </body>
-    </html>
-        `;
-    },
-    //HTML template 중 List 반환
-    list :function (filelist){
-        var list='<ul>';
-        var i=0;
-        while(i<filelist.length){
-            list=list+`<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`
-            i=i+1;
-        }
-        list = list+'</ul>';
-        return list;
-    }
-}
-
-
-
+var db = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'root',
+  password : '401230',
+  database : 'opentutorials'
+});
+db.connect();
 
 //http server open.
 //개설 완료 시 , 콜백 함수로 request 반환.
@@ -56,19 +30,20 @@ var app = http.createServer(function(request,response){
     if(pathname ==='/'){ // Root url request
 
         if(queryData.id===undefined){//no query string
-            
-            fs.readdir('../data',function(error,filelist){
+
+            db.query(`SELECT * FROM topic`, function(error,topics){
                 var title='Welcome'; 
                 var description = 'Hello, Node.js';
-                var list =template.list(filelist);
+                var list =template.list(topics);
                 var html=template.html(title,list,
                     `<h2>${title}</h2>${description}`,
                     `<a href="/create">create</a>`);
-
                 
-                response.writeHead(200);//200(OK)를 반환
-                response.end(html);//HTML template 클라이언트에게 응답
-             });
+                console.log(topics);
+                response.writeHead(200);
+                response.end(html);
+            });
+  
         }
         else{ // if query string exists
             fs.readdir('../data',function(error,filelist){
