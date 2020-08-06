@@ -34,6 +34,12 @@ var app = http.createServer(function(request,response){
         author.home(request,response);
     } else if(pathname === '/author_create_process'){
         author.create_process(request,response);
+    } else if(pathname === '/author/update'){
+        author.update(request,response);
+    } else if(pathname === '/author/update_process'){
+        author.update_process(request,response);
+    } else if(pathname === '/author/delete_process'){
+        author.delete_process(request,response);
     }
     else{
         response.writeHead(404);
