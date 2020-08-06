@@ -4,6 +4,7 @@ var qs = require('querystring');
 var template = require('./lib/template')
 var db = require('./lib/db');
 var topic = require('./lib/topic');
+var author = require('./lib/author');
 //http server open.
 //개설 완료 시 , 콜백 함수로 요청 온 request 반환.
 //response로 클라이언트에게 응답
@@ -29,6 +30,10 @@ var app = http.createServer(function(request,response){
         topic.update_process(request,response);//redirect TO /?id=resultId
     } else if(pathname === '/delete_process'){ // requested FROM /?id=* 
         topic.delete_process(request,response);
+    } else if(pathname === '/author'){
+        author.home(request,response);
+    } else if(pathname === '/author_create_process'){
+        author.create_process(request,response);
     }
     else{
         response.writeHead(404);

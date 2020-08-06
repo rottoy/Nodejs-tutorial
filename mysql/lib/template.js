@@ -1,7 +1,7 @@
 module.exports={
 
       //HTML template 반환
-      html : function (title, list, body, control){
+    html : function (title, list, body, control){
         return `
         <!doctype html>
     <html>
@@ -11,6 +11,7 @@ module.exports={
     </head>
     <body>
     <h1><a href="/">WEB</a></h1>
+    <a href='/author'>author</a>
     ${list}
     ${control}
     ${body}
@@ -19,7 +20,8 @@ module.exports={
         `;
     },
     //HTML template 중 List 반환
-    list :function (topics){
+
+    list : function (topics){
         var list='<ul>';
         var i=0;
         while(i<topics.length){
@@ -45,5 +47,23 @@ module.exports={
             i=i+1;
         }
         return `<select name="author">${tag}</select>`;
+    },
+    authorTable:function(authors){
+        var tag='<table>';
+        var i=0;
+        while(i<authors.length){
+            tag+=`
+            <tr>
+                <td>${authors[i].name}</td>
+                <td>${authors[i].profile}</td>
+                <td>update</td>
+                <td>delete</td>
+
+            </tr>`;
+            i++;
+        }
+        tag+='</table';
+        return tag;
     }
 };
+
