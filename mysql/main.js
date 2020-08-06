@@ -10,7 +10,7 @@ var template = require('./lib/template.js')
 var db = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
-  password : '401230',
+  password : '111111',
   database : 'opentutorials'
 });
 db.connect();
@@ -46,56 +46,55 @@ var app = http.createServer(function(request,response){
   
         }
         else{ // if query string exists
-            fs.readdir('../data',function(error,filelist){
-                var filteredId = path.parse(queryData.id).base;
-                fs.readFile(`../data/${filteredId}`,'utf-8',function(err,description){
-                    var title=queryData.id;
-                    var sanitizedTitle = sanitizeHtml(title);
-                    var sanitizedDescription = sanitizeHtml(description);
-                    var list =template.list(filelist);
-                    console.log(filelist);
-                    console.log(list);
-                    
-                    var html=template.html(sanitizedTitle,list,
-                        `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
+            db.query(`SELECT * FROM topic`, function(error,topics){
+                if(error){throw error;}
+                db.query(`SELECT * FROM topic where id=?`,(queryData.id), function(error2,topic){
+                    if(error2){throw error;}
+                    console.log(topic);
+                    var title=topic[0].title; 
+                    var description = topic[0].description;
+                    var list =template.list(topics);
+                    var html=template.html(title,list,
+                        `<h2>${title}</h2>${description}`,
                         `<a href="/create">create</a>
-                        <a href="/update?id=${sanitizedTitle}">update</a>
-                        <form action="delete_process" method='POST'>
-                        <input type='hidden' name='id' value="${sanitizedTitle}">
-                        <input type='submit' value='delete'>
-                        </form>
-                       `);
-                    //200(OK)를 반환
+                        <a href="/update?id=${queryData.id}">update</a>
+                        <form action="delete_process" method="post">
+                        <input type="hidden" name="id" value="${queryData.id}">
+                        <input type="submit" value="delete">
+                        </form>`);
+                    
+                    console.log(topics);
+                    
                     response.writeHead(200);
+                    //response.end('html');
                     response.end(html);
                 });
             });
-    
+            
         };
    
     
     }
     else if(pathname=='/create'){ // response with POST Form
-        fs.readdir('../data',function(error,filelist){
-            var title='Web - create';
+        db.query(`SELECT * FROM topic`, function(error,topics){
+            var title='Web - create'; 
+            var list =template.list(topics);
+            var html=template.html(title,list,
+                `<form action="http://localhost:3000/create_process" method='POST'>
+                <p><input type="text" name="title" placeholder="title"></p>
+                <p>
+                    <textarea name="description" placeholder="description"></textarea>
+                </p>
+                <p>
+                    <input type="submit">
+                </p>
+                </form>`,``);
             
-            var list =template.list(filelist);
-            
-            var html=template.html(title,list,`
-            <form action="http://localhost:3000/create_process" method='POST'>
-            <p><input type="text" name="title" placeholder="title"></p>
-            <p>
-                <textarea name="description" placeholder="description"></textarea>
-            </p>
-            <p>
-                <input type="submit">
-            </p>
-            </form>
-            `,``);
-            //200(OK)를 반환
+            console.log(topics);
             response.writeHead(200);
             response.end(html);
         });
+        
     }
     else if(pathname=='/create_process'){
         var body='';
@@ -114,17 +113,19 @@ var app = http.createServer(function(request,response){
             
             //return json of body
              var post = qs.parse(body);
-             var title=post.title;
-             var description=post.description;
 
-             //File write
-             fs.writeFile(`../data/${title}`,description,'utf-8',function(err){
-                //Redirection : 302
-                response.writeHead(302,{Location : `/?id=${title}`});
+            //db write
+            //INSERT INTO `topic` VALUES (1,'MySQL','MySQL is...','2018-01-01 12:10:11',1);
+            db.query(`
+            INSERT INTO topic (title , description ,created , author_id)
+            VALUES (?,?,NOW(),?)`,
+            [post.title,post.description, 1],
+            function(error,result){
+                if(error){throw error;}
+                response.writeHead(302,{Location : `/?id=${result.insertId}`});
                 response.end('success');
-             })
-
-             
+         
+            });
 
         });
 
