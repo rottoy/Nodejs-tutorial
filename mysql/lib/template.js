@@ -29,4 +29,21 @@ module.exports={
         list = list+'</ul>';
         return list;
     }
+    ,
+    authorSelect:function(authors,author_id){
+        var tag='';
+        var i=0;
+        console.log('AUthors length : ',authors.length);
+        while(i<authors.length){
+            var selected='';
+            console.log(authors[i].name ,' ' ,author_id);
+            if(authors[i].id===author_id){
+                selected=' selected';
+                console.log('hello');
+            }
+            tag = tag + `<option value="${authors[i].id}"${selected}>${authors[i].name}</option>`;
+            i=i+1;
+        }
+        return `<select name="author">${tag}</select>`;
+    }
 };

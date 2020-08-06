@@ -54,7 +54,7 @@ var app = http.createServer(function(request,response){
                     var html=template.html(title,list,
                         `<h2>${title}</h2>
                         ${description}
-                        <p>by ${topic[0].id}</p>
+                        <p>by ${topic[0].name}</p>
                         `,
                         `<a href="/create">create</a>
                         <a href="/update?id=${queryData.id}">update</a>
@@ -75,18 +75,23 @@ var app = http.createServer(function(request,response){
     else if(pathname=='/create'){   // renderd FROM /;
                                     // response POST TO create_process
         db.query(`SELECT * FROM topic`, function(error,topics){
-            var title='Web - create'; 
-            var list =template.list(topics);
-            var html=template.html(title,list,
+            db.query(`SELECT * FROM author`,function(error2,authors){
+                
+                
+                var title='Web - create'; 
+                var list =template.list(topics);
+                var html=template.html(title,list,
                 `<form action="http://localhost:3000/create_process" method='POST'>
                 <p><input type="text" name="title" placeholder="title"></p>
+                <p>${template.authorSelect(authors)}</p>
                 <p><textarea name="description" placeholder="description"></textarea></p>
                 <p><input type="submit"></p>
                 </form>`,``);
             
-            console.log(topics);
-            response.writeHead(200);
-            response.end(html);
+                console.log(topics);
+                response.writeHead(200);
+                response.end(html);
+            });
         });
         
     }
@@ -104,10 +109,10 @@ var app = http.createServer(function(request,response){
             
             //return json of body
              var post = qs.parse(body);
-
+            console.log(post);
             //db write
             db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?)`,
-            [post.title,post.description, 1], function(error,result){
+            [post.title,post.description, post.author], function(error,result){
                 if(error){throw error;}
                 response.writeHead(302,{Location : `/?id=${result.insertId}`});
                 response.end('success');
@@ -125,19 +130,22 @@ var app = http.createServer(function(request,response){
             if(error){throw error};
             db.query(`SELECT * FROM topic where id=?`,(queryData.id), function(error2,topic){
                 if(error2){throw error;}
-
-                var list =template.list(topics);
-                var html=template.html(topic[0].title,list,
-                    `<form action="http://localhost:3000/update_process" method='POST'>
-                    <input type="hidden" name="id" value="${topic[0].id}">
-                    <p><input type="text" name="title" placeholder="title" value="${topic[0].title}"></p>
-                    <p><textarea name="description" placeholder="description">${topic[0].description}</textarea> </p>
-                    <p><input type="submit"></p>
-                    </form>`,
-                    `<a href="/create">create</a><a href="/update?id=${topic[0].id}">update</a>`);
-                
-                response.writeHead(200);
-                response.end(html);
+                db.query(`SELECT * FROM author`,function(error3,authors){
+                    var list =template.list(topics);
+                    var html=template.html(topic[0].title,list,
+                        `<form action="http://localhost:3000/update_process" method='POST'>
+                        <input type="hidden" name="id" value="${topic[0].id}">
+                        <p><input type="text" name="title" placeholder="title" value="${topic[0].title}"></p>
+                        <p><textarea name="description" placeholder="description">${topic[0].description}</textarea> </p>
+                        <p>${template.authorSelect(authors, topic[0].author_id)}</p>
+                        <p><input type="submit"></p>
+                        </form>`,
+                        `<a href="/create">create</a><a href="/update?id=${topic[0].id}">update</a>`);
+                    
+                    response.writeHead(200);
+                    response.end(html);
+                });
+               
             });
         })
 
