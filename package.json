@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/rottoy/Nodejs-tutorial#readme",
   "dependencies": {
+    "body-parser": "^1.19.0",
+    "compression": "^1.7.4",
     "express": "^4.17.1",
     "mysql": "^2.18.1",
     "pm2": "^4.4.0",
