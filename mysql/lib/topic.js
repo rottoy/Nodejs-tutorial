@@ -62,6 +62,7 @@ exports.create=function(reqeust,response){
             <p><input type="text" name="title" placeholder="title"></p>
             <p>${template.authorSelect(authors)}</p>
             <p><textarea name="description" placeholder="description"></textarea></p>
+            <p><input type="file" name="profile">
             <p><input type="submit"></p>
             </form>`,``);
         

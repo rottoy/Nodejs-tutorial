@@ -1,10 +1,10 @@
-var http = require('http');
+    var http = require('http');
 var fs = require('fs');
 var url = require('url');
 var qs = require('querystring');
 var path = require('path');
 var sanitizeHtml = require('../../node_modules/sanitize-html'); 
-var compression=require('compression');
+
 
 var template ={
     //HTML template 반환
