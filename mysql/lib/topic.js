@@ -2,7 +2,8 @@ var db = require('./db');
 var template = require('./template');
 var url = require('url');
 var qs = require('querystring');
-
+var formidable = require('formidable');
+var fs = require('fs');
 exports.home = function(request,response){
     db.query(`SELECT * FROM topic`, function(error,topics){
         var title='Welcome'; 
@@ -58,7 +59,7 @@ exports.create=function(reqeust,response){
             var title='Web - create'; 
             var list =template.list(topics);
             var html=template.html(title,list,
-            `<form action="http://localhost:3000/create_process" method='POST'>
+            `<form action="http://localhost:3000/create_process" method='POST' enctype="multipart/form-data">
             <p><input type="text" name="title" placeholder="title"></p>
             <p>${template.authorSelect(authors)}</p>
             <p><textarea name="description" placeholder="description"></textarea></p>
@@ -66,7 +67,7 @@ exports.create=function(reqeust,response){
             <p><input type="submit"></p>
             </form>`,``);
         
-            console.log(topics);
+            //console.log(topics);
             response.writeHead(200);
             response.end(html);
         });
@@ -75,30 +76,34 @@ exports.create=function(reqeust,response){
 
 exports.create_process=function(request,response){
 
-    var body='';
+    var form = new formidable.IncomingForm();
+        form.parse(request, function (err, fields, files) {
+            if(err)throw err;
+           
+            fs.readFile(files.profile.path,function(err2,isthisblob){
+               
 
-    //request.on : 데이터가 부분으로 들어옴
-    request.on('data', function(data){
-        body= body+data;
-        //body is POST data
-    });
-
-    //request.end : 정보 수신이 끝났을 때 실행
-    request.on('end',function(){
-        
-        //return json of body
-         var post = qs.parse(body);
-        console.log(post);
-        //db write
-        db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?)`,
-        [post.title,post.description, post.author], function(error,result){
+                if(err2) throw err2;
+                
+                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?); INSERT INTO image (topic_id, image_name ,file_data) VALUES (?,?,?)`,
+                [fields.title,fields.description, fields.author,
+                1,files.name,isthisblob], function(error,result){
+                if(error){throw error;}
+                response.writeHead(302,{Location : `/?id=${result.insertId}`});
+                response.end('success');
+                });
+            });
+            /*db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?); INSERT INTO image (topic_id, image_name ,file_data) VALUES (?,?,?,?)`,
+            [fields.title,fields.description, fields.author,
+            1,files.name,file], function(error,result){
             if(error){throw error;}
             response.writeHead(302,{Location : `/?id=${result.insertId}`});
             response.end('success');
-     
-        });
-
+            });*/
     });
+    
+    //request.end : 정보 수신이 끝났을 때 실행
+
 
 }
 
