@@ -4,6 +4,9 @@ var url = require('url');
 var qs = require('querystring');
 var formidable = require('formidable');
 var fs = require('fs');
+var s3 = require('./aws.js');
+
+//console.log(s3);
 exports.home = function(request,response){
     db.query(`SELECT * FROM topic`, function(error,topics){
         var title='Welcome'; 
@@ -30,7 +33,7 @@ exports.page= function(request,response){
             var description = topic[0].description;
             var list =template.list(topics);
             var html=template.html(title,list,
-                `<h2>${title}</h2>
+                `<h2>${title}</h2>      
                 ${description}
                 <p>by ${topic[0].name}</p>
                 `,
@@ -79,15 +82,25 @@ exports.create_process=function(request,response){
     var form = new formidable.IncomingForm();
         form.parse(request, function (err, fields, files) {
             if(err)throw err;
-           
-            fs.readFile(files.profile.path,function(err2,isthisblob){
-               
-
+            
+            fs.readFile(files.profile.path,function(err2,MaybeBufferData){
+                var param = {
+                    'Bucket':'wnsgur9609-nodejs',
+                    'Key': 'test',
+                    'Body':MaybeBufferData,
+                    'ContentType':'image/png'
+                    
+                };
+                s3.upload(param, function(err, data){
+                    if(err) {
+                        console.log(err);
+                    }
+                    console.log(data);
+                });
                 if(err2) throw err2;
                 
-                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?); INSERT INTO image (topic_id, image_name ,file_data) VALUES (?,?,?)`,
-                [fields.title,fields.description, fields.author,
-                1,files.name,isthisblob], function(error,result){
+                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?); `,
+                [fields.title,fields.description, fields.author], function(error,result){
                 if(error){throw error;}
                 response.writeHead(302,{Location : `/?id=${result.insertId}`});
                 response.end('success');
