@@ -4,8 +4,7 @@ var url = require('url');
 var qs = require('querystring');
 var formidable = require('formidable');
 var fs = require('fs');
-var s3 = require('./aws.js');
-
+var file = require('./file.js');
 //console.log(s3);
 exports.home = function(request,response){
     db.query(`SELECT * FROM topic`, function(error,topics){
@@ -83,20 +82,9 @@ exports.create_process=function(request,response){
         form.parse(request, function (err, fields, files) {
             if(err)throw err;
             
-            fs.readFile(files.profile.path,function(err2,MaybeBufferData){
-                var param = {
-                    'Bucket':'wnsgur9609-nodejs',
-                    'Key': 'test',
-                    'Body':MaybeBufferData,
-                    'ContentType':'image/png'
-                    
-                };
-                s3.upload(param, function(err, data){
-                    if(err) {
-                        console.log(err);
-                    }
-                    console.log(data);
-                });
+            fs.readFile(files.profile.path,function(err2,data){
+                
+                file.s3_upload(data);
                 if(err2) throw err2;
                 
                 db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?); `,
