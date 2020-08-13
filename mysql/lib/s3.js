@@ -13,6 +13,7 @@ exports.s3_upload=function(file_path,file_data){
            console.log('file.js->s3->upload : error - ',err);
         }
         console.log('file.js -> s3 -> upload : success');
+        console.log(data.Location)
     });
 };
 

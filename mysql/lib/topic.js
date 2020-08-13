@@ -25,9 +25,11 @@ exports.page= function(request,response){
     var queryData = url.parse(_url,true).query;
     db.query(`SELECT * FROM topic`, function(error,topics){
         if(error){throw error;}
+
         db.query(`SELECT * FROM topic LEFT JOIN author ON topic.author_id=author.id where topic.id=?`,(queryData.id), function(error2,topic){
             if(error2){throw error;}
 
+            //db.query(`SELECT * FROM file `){}
             var title=topic[0].title; 
             var description = topic[0].description;
             var list =template.list(topics);
@@ -41,7 +43,10 @@ exports.page= function(request,response){
                 <form action="delete_process" method="post">
                 <input type="hidden" name="id" value="${queryData.id}">
                 <input type="submit" value="delete">
-                </form>`);
+                </form>
+                <a href="https://wnsgur9609-nodejs.s3.us-east-2.amazonaws.com/post_directory/17/KakaoTalk_20200427_142238087.png" download>hellso download me </a>
+                
+                `);
                
             response.writeHead(200);
             response.end(html);
@@ -86,9 +91,10 @@ exports.create_process=function(request,response){
             fs.readFile(files.profile.path,function(err2,file_data){ 
                 if(err2) throw err2;
                 
-                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?);`,
-                [fields.title,fields.description, fields.author], function(err3,result){
-                if(err3){throw err3;}
+                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?);`,[fields.title,fields.description, fields.author],
+                function(err3,result){
+                    if(err3){throw err3;}
+
                     const file_name = files.profile.name;
                     const topic_id = result.insertId;
                     const file_path = `post_directory/${topic_id}/${file_name}`;
@@ -96,29 +102,20 @@ exports.create_process=function(request,response){
                     
                     db.query(`INSERT INTO file (topic_id, file_path, file_type , file_name) VALUES (?,?,?,?);`,[topic_id,file_path,file_type,file_name],function(err4,result2){
                         if(err4)throw err4;
-                        
+
                         file.s3_upload(file_path,file_data);
                         response.writeHead(302,{Location : `/?id=${result.insertId}`});
                         response.end('success');
-                    })
+                    });
                         
                 });
                 
                 //console.log(something);
             
             });
-            /*db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?); INSERT INTO image (topic_id, image_name ,file_data) VALUES (?,?,?,?)`,
-            [fields.title,fields.description, fields.author,
-            1,files.name,file], function(error,result){
-            if(error){throw error;}
-            response.writeHead(302,{Location : `/?id=${result.insertId}`});
-            response.end('success');
-            });*/
+        
     });
     
-    //request.end : 정보 수신이 끝났을 때 실행
-
-
 }
 
 exports.update = function(request,response){
