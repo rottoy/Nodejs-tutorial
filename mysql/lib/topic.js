@@ -4,7 +4,7 @@ var url = require('url');
 var qs = require('querystring');
 var formidable = require('formidable');
 var fs = require('fs');
-var file = require('./file.js');
+var file = require('./s3.js');
 //console.log(s3);
 exports.home = function(request,response){
     db.query(`SELECT * FROM topic`, function(error,topics){
@@ -80,19 +80,32 @@ exports.create_process=function(request,response){
 
     var form = new formidable.IncomingForm();
         form.parse(request, function (err, fields, files) {
+            //console.log(files.profile);
             if(err)throw err;
             
-            fs.readFile(files.profile.path,function(err2,data){
-                
-                file.s3_upload(data);
+            fs.readFile(files.profile.path,function(err2,file_data){ 
                 if(err2) throw err2;
                 
-                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?); `,
-                [fields.title,fields.description, fields.author], function(error,result){
-                if(error){throw error;}
-                response.writeHead(302,{Location : `/?id=${result.insertId}`});
-                response.end('success');
+                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?);`,
+                [fields.title,fields.description, fields.author], function(err3,result){
+                if(err3){throw err3;}
+                    const file_name = files.profile.name;
+                    const topic_id = result.insertId;
+                    const file_path = `post_directory/${topic_id}/${file_name}`;
+                    const file_type = files.profile.type;
+                    
+                    db.query(`INSERT INTO file (topic_id, file_path, file_type , file_name) VALUES (?,?,?,?);`,[topic_id,file_path,file_type,file_name],function(err4,result2){
+                        if(err4)throw err4;
+                        
+                        file.s3_upload(file_path,file_data);
+                        response.writeHead(302,{Location : `/?id=${result.insertId}`});
+                        response.end('success');
+                    })
+                        
                 });
+                
+                //console.log(something);
+            
             });
             /*db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?); INSERT INTO image (topic_id, image_name ,file_data) VALUES (?,?,?,?)`,
             [fields.title,fields.description, fields.author,
