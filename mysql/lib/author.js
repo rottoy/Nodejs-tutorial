@@ -79,6 +79,7 @@ exports.update=function(request,response){
                 var list =template.list(topics);
                 var html=template.html(title,list,
                     `
+                   
                     <table>
                       ${template.authorTable(authors)}
                     </table>

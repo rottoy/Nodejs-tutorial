@@ -1,11 +1,11 @@
 var s3 = require('./aws.js');
 
-exports.s3_upload=function(file_path,file_data){
+exports.s3_upload=function(file_path,file_data,file_type){
     var param = {
         'Bucket':'wnsgur9609-nodejs',
         'Key': file_path, 
         'Body':file_data,
-        'ContentType':'image/png'
+        'ContentType':file_type
         
     };
     s3.upload(param, function(err, data){
@@ -16,6 +16,10 @@ exports.s3_upload=function(file_path,file_data){
         console.log(data.Location)
     });
 };
+
+exports.buck_name='wnsgur9609-nodejs';
+exports.host_name='s3.amazonaws.com';
+exports.path_name=`https://${this.buck_name}.${this.host_name}/`;
 
 // database - param
 // id : auto-increment

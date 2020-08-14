@@ -4,7 +4,7 @@ var url = require('url');
 var qs = require('querystring');
 var formidable = require('formidable');
 var fs = require('fs');
-var file = require('./s3.js');
+var s3_module = require('./s3.js');
 //console.log(s3);
 exports.home = function(request,response){
     db.query(`SELECT * FROM topic`, function(error,topics){
@@ -29,12 +29,15 @@ exports.page= function(request,response){
         db.query(`SELECT * FROM topic LEFT JOIN author ON topic.author_id=author.id where topic.id=?`,(queryData.id), function(error2,topic){
             if(error2){throw error;}
 
-            //db.query(`SELECT * FROM file `){}
-            var title=topic[0].title; 
-            var description = topic[0].description;
-            var list =template.list(topics);
-            var html=template.html(title,list,
-                `<h2>${title}</h2>      
+            db.query(`SELECT * FROM file where topic_id=?`,(queryData.id),function(error3, files){
+                
+                var title=topic[0].title; 
+                var description = topic[0].description;
+                var list =template.list(topics);
+                var filelist = template.filelist(files);
+                var html=template.html(title,list,
+                `
+                <h2>${title}</h2>      
                 ${description}
                 <p>by ${topic[0].name}</p>
                 `,
@@ -44,12 +47,14 @@ exports.page= function(request,response){
                 <input type="hidden" name="id" value="${queryData.id}">
                 <input type="submit" value="delete">
                 </form>
-                <a href="https://wnsgur9609-nodejs.s3.us-east-2.amazonaws.com/post_directory/17/KakaoTalk_20200427_142238087.png" download>hellso download me </a>
-                
+                ${filelist}
                 `);
-               
+            //bucketName, db의 디렉토리   
+            //response.writeHead(200, { 'Access-Control-Allow-Origin': '*' });
             response.writeHead(200);
             response.end(html);
+            });
+            
         });
     });
     
@@ -70,7 +75,7 @@ exports.create=function(reqeust,response){
             <p><input type="text" name="title" placeholder="title"></p>
             <p>${template.authorSelect(authors)}</p>
             <p><textarea name="description" placeholder="description"></textarea></p>
-            <p><input type="file" name="profile">
+            <p><input type="file" multiple="multiple" name="profile">
             <p><input type="submit"></p>
             </form>`,``);
         
@@ -94,16 +99,17 @@ exports.create_process=function(request,response){
                 db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?);`,[fields.title,fields.description, fields.author],
                 function(err3,result){
                     if(err3){throw err3;}
-
+                    
                     const file_name = files.profile.name;
                     const topic_id = result.insertId;
                     const file_path = `post_directory/${topic_id}/${file_name}`;
                     const file_type = files.profile.type;
-                    
-                    db.query(`INSERT INTO file (topic_id, file_path, file_type , file_name) VALUES (?,?,?,?);`,[topic_id,file_path,file_type,file_name],function(err4,result2){
-                        if(err4)throw err4;
+                    const s3_file_path = s3_module.path_name+file_path;
+                    console.log(s3_file_path);
+                    s3_module.s3_upload(file_path,file_data,file_type);
 
-                        file.s3_upload(file_path,file_data);
+                    db.query(`INSERT INTO file (topic_id, file_path, file_type , file_name) VALUES (?,?,?,?);`,[topic_id,s3_file_path,file_type,file_name],function(err4,result2){
+                        if(err4)throw err4;
                         response.writeHead(302,{Location : `/?id=${result.insertId}`});
                         response.end('success');
                     });

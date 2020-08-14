@@ -32,6 +32,18 @@ module.exports={
         return list;
     }
     ,
+    filelist : function(files){
+        var list='<ul>';
+        var i=0;
+        while(i<files.length){
+            list=list+`<li><a href="${files[i].file_path}">${files[i].file_name}</a></li>`
+            i=i+1;
+        }
+        list = list+'</ul>';
+        return list;
+
+    }
+    ,
     authorSelect:function(authors,author_id){
         var tag='';
         var i=0;
