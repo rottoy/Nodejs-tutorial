@@ -75,7 +75,7 @@ exports.create=function(reqeust,response){
             <p><input type="text" name="title" placeholder="title"></p>
             <p>${template.authorSelect(authors)}</p>
             <p><textarea name="description" placeholder="description"></textarea></p>
-            <p><input type="file" multiple="multiple" name="profile">
+            <p><input type="file" multiple="multiple" name="profile[]">
             <p><input type="submit"></p>
             </form>`,``);
         
@@ -87,41 +87,54 @@ exports.create=function(reqeust,response){
 }
 
 exports.create_process=function(request,response){
+  
+    db.query(`select auto_increment from information_schema.TABLES where TABLE_NAME ='topic' and TABLE_SCHEMA='opentutorials';`,function(err,index){
+        const topic_id=index[0].AUTO_INCREMENT;
+        let topic;
+    
+        let form = new formidable.IncomingForm();
+            form.parse(request, function (err, fields, files) {
+                topic=fields;
+            });
+    
+        form.on('end', function(fields, files) {
+            if(topic===undefined){
+                console.log('error occured');
+                response.writeHead(500);
+                response.end('failed');
+            }
+            else{
+                console.log(" 총 업로드 파일 갯수 == ", this.openedFiles.length);
+                for(var i = 0; i < this.openedFiles.length; i++){
 
-    var form = new formidable.IncomingForm();
-        form.parse(request, function (err, fields, files) {
-            //console.log(files.profile);
-            if(err)throw err;
-            
-            fs.readFile(files.profile.path,function(err2,file_data){ 
-                if(err2) throw err2;
-                
-                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?);`,[fields.title,fields.description, fields.author],
-                function(err3,result){
-                    if(err3){throw err3;}
-                    
-                    const file_name = files.profile.name;
-                    const topic_id = result.insertId;
-                    const file_path = `post_directory/${topic_id}/${file_name}`;
-                    const file_type = files.profile.type;
-                    const s3_file_path = s3_module.path_name+file_path;
-                    console.log(s3_file_path);
-                    s3_module.s3_upload(file_path,file_data,file_type);
-
-                    db.query(`INSERT INTO file (topic_id, file_path, file_type , file_name) VALUES (?,?,?,?);`,[topic_id,s3_file_path,file_type,file_name],function(err4,result2){
-                        if(err4)throw err4;
-                        response.writeHead(302,{Location : `/?id=${result.insertId}`});
-                        response.end('success');
+                    const file_path = this.openedFiles[i].path;
+                    const file_name = this.openedFiles[i].name;
+                    const file_type = this.openedFiles[i].type;
+                    console.log(file_path);
+                    console.log(file_name);
+                    fs.readFile(file_path,function(err2,file_data){ 
+                        if(err2) throw err2;
+                                                   
+                            const file_path = `post_directory/${topic_id}/${file_name}`;
+                            const s3_file_path = s3_module.path_name+file_path;
+                            s3_module.s3_upload(file_path,file_data,file_type);
+                            db.query(`INSERT INTO file (topic_id, file_path, file_type , file_name) VALUES (?,?,?,?);`,[topic_id,s3_file_path,file_type,file_name]);  
+                        //console.log(something);
                     });
-                        
+
+                }
+                db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?);`,[topic.title,topic.description, topic.author],
+                function(err3,result){
+                    response.writeHead(302,{Location : `/?id=${result.insertId}`});
+                    response.end('success');
                 });
                 
-                //console.log(something);
-            
-            });
-        
+            }
+
+        });
+
     });
-    
+      
 }
 
 exports.update = function(request,response){
