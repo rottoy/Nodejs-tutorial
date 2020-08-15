@@ -87,31 +87,39 @@ exports.create=function(reqeust,response){
 }
 
 exports.create_process=function(request,response){
-  
+    //sync - auto_increment for insert querying and s3 uploading , form parse for file uploading 
+    //async - s3 upload, db insert query
     db.query(`select auto_increment from information_schema.TABLES where TABLE_NAME ='topic' and TABLE_SCHEMA='opentutorials';`,function(err,index){
         const topic_id=index[0].AUTO_INCREMENT;
+        console.log(topic_id);
+       //const topic_id = 34;
         let topic;
     
         let form = new formidable.IncomingForm();
+            form.encoding = 'utf-8';
+
             form.parse(request, function (err, fields, files) {
                 topic=fields;
+                //console.log('form parsing -> file object :',files);
             });
     
         form.on('end', function(fields, files) {
             if(topic===undefined){
                 console.log('error occured');
                 response.writeHead(500);
-                response.end('failed');
+                response.end('topic->create_process->form parsing failed');
             }
             else{
-                console.log(" 총 업로드 파일 갯수 == ", this.openedFiles.length);
+                
+                //console.log(" 총 업로드 파일 갯수 == ", this.openedFiles.length);
                 for(var i = 0; i < this.openedFiles.length; i++){
-
+                    if(this.openedFiles[i].size===0)continue;
+                    
                     const file_path = this.openedFiles[i].path;
                     const file_name = this.openedFiles[i].name;
                     const file_type = this.openedFiles[i].type;
-                    console.log(file_path);
-                    console.log(file_name);
+                    console.log('file path : '+file_path);
+                    console.log('file name : '+file_name);
                     fs.readFile(file_path,function(err2,file_data){ 
                         if(err2) throw err2;
                                                    
@@ -119,12 +127,13 @@ exports.create_process=function(request,response){
                             const s3_file_path = s3_module.path_name+file_path;
                             s3_module.s3_upload(file_path,file_data,file_type);
                             db.query(`INSERT INTO file (topic_id, file_path, file_type , file_name) VALUES (?,?,?,?);`,[topic_id,s3_file_path,file_type,file_name]);  
-                        //console.log(something);
                     });
 
                 }
                 db.query(`INSERT INTO topic (title , description ,created , author_id) VALUES (?,?,NOW(),?);`,[topic.title,topic.description, topic.author],
                 function(err3,result){
+                    //console.log(result.insertId);
+                    db.query(`ANALYZE TABLE opentutorials.topic;`);
                     response.writeHead(302,{Location : `/?id=${result.insertId}`});
                     response.end('success');
                 });
